@@ -1,31 +1,34 @@
 document.addEventListener('DOMContentLoaded', function () {
+  const socket = io.connect()
+
+  // circle
   const circle = document.querySelector('.circle')
+  // div
   const area = document.querySelector('.area')
 
+  // variables
   var mousePosition
   var offset = [0, 0]
   var isDown = false
+  // circle coords in the "area" div
+  var coordX = 450
+  var coordY = 250
 
-  const position = (element) => {
-    let areaCoords = area.getBoundingClientRect()
-    let areaX = areaCoords.x
-    let areaY = areaCoords.y
+  // client joined emit
+  socket.emit('client-join')
 
-    let circleCoords = element.getBoundingClientRect()
-    let circleX = circleCoords.x
-    let circleY = circleCoords.y
+  // set the coordinates, when it's changed on one of the clients
+  socket.on('set-coords', (data) => {
+    coordX = data.coords.coordX
+    coordY = data.coords.coordY
 
-    let circleDivX = circleX - areaX - 2 // 2 - circle border
-    let circleDivY = circleY - areaY - 2
+    // 'x'
+    circle.style.left = coordX + 'px'
+    // 'y'
+    circle.style.top = coordY + 'px'
 
-    console.log('areaCoords: ', areaCoords)
-    console.log('circleCoords: ', circleCoords)
-
-    document.title = `Circle position (${Math.round(circleDivX)}; ${Math.round(
-      circleDivY
-    )})`
-    return circleCoords
-  }
+    document.title = `Circle position (${coordX}; ${coordY})`
+  })
 
   // circle position logic
   // setting offset (отступы)
@@ -56,19 +59,27 @@ document.addEventListener('DOMContentLoaded', function () {
           y: event.clientY,
         }
 
-        let coordX = mousePosition.x + offset[0]
-        let coordY = mousePosition.y + offset[1]
+        coordX = mousePosition.x + offset[0]
+        coordY = mousePosition.y + offset[1]
+
+        document.title = `Circle position (${coordX}; ${coordY})`
 
         if (coordX >= 0 && coordX < 900 && coordY >= 0 && coordY < 500) {
           // 'x'
           circle.style.left = coordX + 'px'
           // 'y'
           circle.style.top = coordY + 'px'
+
+          // coords on the current client changed => emit it to the server
+          socket.emit('coords-changed', {
+            coords: {
+              coordX: coordX,
+              coordY: coordY,
+            },
+          })
         }
       }
     },
     true
   )
-
-  //   position(circle)
 })
